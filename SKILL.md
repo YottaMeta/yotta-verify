@@ -1,0 +1,103 @@
+---
+name: yotta-verify
+version: 0.1.0
+description: 元信 —— 装任何技能/包前的确定性安全扫描器：prompt injection（提示注入）+ 危险模式 + SKILL.md 完整性 + 权限需求，输出 verdict（SAFE TO INSTALL / INSTALL WITH CAUTION / REVIEW REQUIRED / DO NOT INSTALL）+ audited 徽章。触发：安装/评估任何技能或 npm 包前、给技能做安全验证、生成 audited 徽章、CI 装前闸门；或用户说 装前扫描/验证/audited/安全验证/verify-skill/可信 等。边界：只做确定性静态扫描与报告，不执行被测代码、不联网、不装包、不修复；结论需人工确认，不代替最终决策。
+license: MIT
+---
+
+# 元信（yotta-verify）
+
+装任何技能 / 包之前的「确定性安全验证」——扫描 prompt injection、危险模式、SKILL.md 完整性
+与权限需求，给出一句话 verdict 与可随包发布的 **audited 徽章**：
+
+- **scan**：装前安全扫描（提示注入 + 危险模式 + 技能结构 + 权限需求），输出 verdict。
+- **badge**：生成 audited 徽章（本地 SVG + shields.io URL；validate-skill + 元安/元审 verdict + 版本 + 引擎测试数）。
+- **report**：生成 SKILL VERIFY REPORT（Markdown / JSON）。
+- **gate**：CI 装前闸门（默认阈值 medium，超出即失败）。
+
+零依赖（Python 3.8+ 标准库），Windows + Linux + macOS 通用。危险模式规则与元安
+（yotta-security-audit）共用（scripts/verify_rules.py 为同步副本，勿手改）。
+
+## 何时使用
+
+- 从技能市场、GitHub、npm 或任何来源获取技能 / 包后、安装前；
+- 评估他人分享的技能是否安全、是否值得安装；
+- 给自己的技能包生成 audited 徽章、对外宣传「已验证安全」；
+- CI 里给技能仓库加装前扫描闸门。
+
+**Do NOT trigger**：本工具只做确定性静态扫描与报告——不执行被测技能代码、不联网、不装包、
+不修复、不做动态分析；最终结论必须由人类确认，不代替安装决策。
+
+## 快速使用
+
+```bash
+# 装前扫描一个技能目录 / npm 包目录 / tarball
+python3 scripts/yotta_verify.py scan ./some-skill
+
+# JSON + Markdown 报告 + audited 徽章
+python3 scripts/yotta_verify.py scan ./some-skill --json --report report.md --badge
+
+# 生成 audited 徽章（可合并元审/元安 verdict 与 validate-skill 结果）
+python3 scripts/yotta_verify.py badge ./some-skill --validate-skill pass     --vetter-verdict "SAFE TO INSTALL" --audit-verdict "SAFE TO INSTALL" --tests 52
+
+# CI 闸门：最严重级超过 medium 即失败（exit != 0）
+python3 scripts/yotta_verify.py gate ./some-skill --max-severity medium
+```
+
+## verdict 判定
+
+| 最高严重级 | verdict | 退出码 |
+|---|---|---|
+| critical | DO NOT INSTALL | 3 |
+| high | INSTALL WITH CAUTION | 2 |
+| medium | REVIEW REQUIRED | 1 |
+| low/info | SAFE TO INSTALL | 0 |
+
+exit code 与元安 / 元审一致（0 / 1 / 2 / 3 / 4 = 错误）。
+
+## 四块检测
+
+1. **Prompt Injection（提示注入）**：指令覆盖（ignore-previous-instructions 类）、角色伪造、
+   隐藏/编码指令（base64 解码命令）、数据外传指令、分隔符逃逸 / 伪系统标签、工具自执行指令、
+   越权 / 隐藏意图（don't-tell-the-user 类）、凭据 / 输入采集。详见 references/injection-patterns.md。
+2. **危险模式（与元安共用规则）**：下载即执行 / 混淆执行 / 持久化 / 数据外传 / 凭据窃取 /
+   网络调用 / 权限提升 / 社会工程。
+3. **SKILL.md 完整性**：frontmatter 必需字段、name 与目录一致、markdown 围栏平衡、无占位符残留。
+4. **权限需求（info 级提示）**：脚本引用的网络调用 / 命令执行 / 文件写入 / 敏感文件读取范围。
+
+## 授权声明
+
+- 本工具只对**用户有权检查的目标**做静态扫描：自有技能 / 包、已获授权评估的第三方技能与包。
+- 扫描只读：不执行被测代码、不联网、不装包、不修改目标文件；输出报告仅供授权范围内的安全评估使用。
+- 请勿对无权评估的目标使用；如目标来自他人分享，先确认你有权检查其内容。
+
+## 法律 / 红线声明
+
+- 本工具仅提供**确定性静态安全校验与报告**，不输出攻击 payload、不指导利用、不含双用途内容；
+  检测规则与教学文档（references/injection-patterns.md）仅用于装前安全验证与安全教学。
+- 使用本工具须遵守所在地法律与相关平台条款；对任何目标的使用责任由使用者自负。
+- 与元阁安全家族一致：检测 / 扫描类规则与样例属固有属性，仅用于「让用户敢装」的信任验证，绝不用于攻击。
+
+## 免费核心 + Pro 分层
+
+- **免费核心（全部开放）**：scan / badge / report / gate 全功能（确定性静态扫描）。
+- **Pro（付费，待商业化落地）**：高级注入启发式 / 批量扫描 / 企业报告模板 / 自动化阈值；
+  调用 `--pro --license <key>` 启用，未带 license 自动降级免费核心。
+
+## 与元安 / 元审的分工
+
+- 元信 = 装前确定性扫描 + 徽章：一句话 verdict，面向「安装决策」与「已验证安全」信任呈现；
+- 元审 = 安装前四阶段 checklist 初审（来源 / 代码 / 权限 / 风险）；
+- 元安 = 深度扫描：8 类检测器 + 系统安全基线；
+- 建议链路：元信 scan（快速 verdict + 徽章）→ 有 medium 及以上转元审四阶段 → high 及以上转元安深度扫描。
+
+## 自扫说明
+
+元信自扫（dogfooding）通过：对自身安装目录扫描无 critical / high。扫描器规则表
+（verify_rules.py 等）为签名数据自动跳过；报告中的 URL 类 low 提示属预期（shields.io 链接）。
+
+## 参考文档
+
+- references/injection-patterns.md — 提示注入检测模式说明（8 类）
+- references/verify-report-template.md — SKILL VERIFY REPORT 模板
+- references/badges.md — audited 徽章说明（内容 / 用法 / 嵌入 README）
