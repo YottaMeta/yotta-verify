@@ -1,6 +1,6 @@
 ---
 name: yotta-verify
-version: 0.1.1
+version: 0.2.0
 description: 元信 —— 装任何技能/包前的确定性安全扫描器：prompt injection（提示注入）+ 危险模式 + SKILL.md 完整性 + 权限需求，输出 verdict（SAFE TO INSTALL / INSTALL WITH CAUTION / REVIEW REQUIRED / DO NOT INSTALL）+ audited 徽章。触发：安装/评估任何技能或 npm 包前、给技能做安全验证、生成 audited 徽章、CI 装前闸门；或用户说 装前扫描/验证/audited/安全验证/verify-skill/可信 等。边界：只做确定性静态扫描与报告，不执行被测代码、不联网、不装包、不修复；结论需人工确认，不代替最终决策。
 license: MIT
 ---
@@ -55,15 +55,29 @@ python3 scripts/yotta_verify.py gate ./some-skill --max-severity medium
 
 exit code 与元安 / 元审一致（0 / 1 / 2 / 3 / 4 = 错误）。
 
-## 四块检测
+## 检测能力（v0.2.0 增强：对齐腾讯云鼎 8 检测点 + 科恩 13 行为项）
+
+0. **威胁捕获模型（8 检测点）**：供应链风险 / 命令执行风险 / 网络请求与数据外传 /
+   文件操作与敏感路径访问 / Prompt 注入风险 / 远程脚本下载执行 / 可疑编码·混淆 / 其他安全风险；
+   报告按 8 类逐类给 verdict（danger / suspicious / safe / n/a）。
 
 1. **Prompt Injection（提示注入）**：指令覆盖（ignore-previous-instructions 类）、角色伪造、
    隐藏/编码指令（base64 解码命令）、数据外传指令、分隔符逃逸 / 伪系统标签、工具自执行指令、
    越权 / 隐藏意图（don't-tell-the-user 类）、凭据 / 输入采集。详见 references/injection-patterns.md。
-2. **危险模式（与元安共用规则）**：下载即执行 / 混淆执行 / 持久化 / 数据外传 / 凭据窃取 /
-   网络调用 / 权限提升 / 社会工程。
+2. **危险模式（与元安共用规则，54 → 61）**：下载即执行 / 混淆执行 / 持久化 / 数据外传 / 凭据窃取 /
+   网络调用 / 权限提升 / 社会工程 + 新增 **路径穿越（PathTraversal）/ MCP 命令执行（MCPCommandExec）/
+   MCP 任意文件读写（MCPFileAccess）**。
+2.5 **MCP 工具面（L3，v0.2.0 新增）**：识别 MCP server 工具集，追踪「工具参数 → 危险 sink」，
+   恶意 MCP（参数流入 spawnSync / execSync / 任意文件读写）判 **DO NOT INSTALL**。
+2.6 **数据流（L2，v0.2.0 新增）**：argv 注入面 → 子进程 sink 无防护判 medium。
 3. **SKILL.md 完整性**：frontmatter 必需字段、name 与目录一致、markdown 围栏平衡、无占位符残留。
-4. **权限需求（info 级提示）**：脚本引用的网络调用 / 命令执行 / 文件写入 / 敏感文件读取范围。
+4. **权限需求**：脚本引用的网络调用 / 命令执行 / 文件写入 / 敏感文件读取范围（按 8 类归口提示）。
+
+## 报告（v0.2.0 腾讯式双视角）
+
+- **安全健康度评分**（0-100）；**威胁捕获模型视图**（8 类逐类 verdict）；
+- **行为项**（科恩式 13 项：安装依赖包 / 收集系统信息 / … / 修改 AI 配置）；
+- **逐文件 verdict**；**修复建议指南**；**内容 hash**（text / JSON / Markdown 三格式）。
 
 ## 授权声明
 
@@ -94,7 +108,8 @@ exit code 与元安 / 元审一致（0 / 1 / 2 / 3 / 4 = 错误）。
 ## 自扫说明
 
 元信自扫（dogfooding）通过：对自身安装目录扫描无 critical / high。扫描器规则表
-（verify_rules.py 等）为签名数据自动跳过；报告中的 URL 类 low 提示属预期（shields.io 链接）。
+（verify_rules.py 等）为签名数据自动跳过；测试文件（构造样例）扫描跳过、发布包排除测试；
+正例 yotta-memory v0.8.5（修复后）判 SAFE；报告中的 URL 类 low 提示属预期（shields.io 链接）。
 
 ## 参考文档
 

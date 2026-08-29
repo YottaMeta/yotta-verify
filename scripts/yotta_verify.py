@@ -50,8 +50,9 @@ except Exception:
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 import verify_rules  # noqa: E402
+import threat_engine  # noqa: E402
 
-VERSION = "0.1.1"
+VERSION = "0.2.0"
 TOOL_NAME = "yotta-verify"
 CN_NAME = "元信"
 
@@ -161,6 +162,9 @@ def walk_files(root, base=""):
             except OSError:
                 continue
             if size > MAX_FILE_SIZE:
+                continue
+            # 测试文件为签名/测试数据（含构造的恶意样例），非被测技能行为，跳过
+            if entry.name.startswith("test_") and entry.name.endswith(".py"):
                 continue
             if is_text_file(entry.name):
                 out.append((entry, rel))
@@ -485,11 +489,22 @@ def scan_core(target, name_hint=None):
     findings = scan_patterns(files)
     check_skill_integrity(root, findings, name_hint)
     permission_summary(files, findings)
+    # L2/L3 威胁捕获引擎（2026-08-30 增强：数据流 + MCP 工具面）
+    for fd in threat_engine.analyze_mcp_tool_surface(files, read_lines):
+        findings.append(Finding(
+            fd["detector"], fd["severity"], fd["category"], fd["file"],
+            fd["line"], fd["description"], fd["confidence"], fd["rule_id"]))
+    for fd in threat_engine.analyze_dataflow(files, read_lines):
+        findings.append(Finding(
+            fd["detector"], fd["severity"], fd["category"], fd["file"],
+            fd["line"], fd["description"], fd["confidence"], fd["rule_id"]))
     counts, by_severity, highest, verdict = summarize(findings)
     meta = {
         "target": str(target),
         "files_scanned": len(files),
         "scanned_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "content_hash": threat_engine.build_content_hash(files, read_lines),
+        "engine": "yotta-verify v%s + threat_engine" % VERSION,
     }
     if tmpdir:
         import shutil
@@ -500,6 +515,7 @@ def scan_core(target, name_hint=None):
 # ── 报告渲染 ───────────────────────────────────────────────────────────────
 
 def render_text(findings, counts, verdict, meta, tool_version=VERSION):
+    fdicts = [f.to_dict() for f in findings]
     lines = []
     lines.append("%s %s v%s —— 装前安全扫描" % (CN_NAME, TOOL_NAME, tool_version))
     lines.append("目标：%s（扫描 %d 个文件）" % (meta["target"], meta["files_scanned"]))
@@ -507,6 +523,21 @@ def render_text(findings, counts, verdict, meta, tool_version=VERSION):
     lines.append("verdict: %s" % verdict)
     parts = ["%s %d" % (k, counts.get(k, 0)) for k in ("critical", "high", "medium", "low", "info")]
     lines.append("发现：%s" % " / ".join(parts))
+    lines.append("安全健康度评分：%d/100" % threat_engine.health_score(fdicts))
+    lines.append("")
+    lines.append("威胁捕获模型（8 类，云鼎式）：")
+    tv = threat_engine.taxonomy_view(
+        fdicts, verify_rules.THREAT_TAXONOMY, verify_rules.TAXONOMY_ORDER,
+        verify_rules.DETECTOR_TO_TAXONOMY)
+    for key in verify_rules.TAXONOMY_ORDER:
+        v = tv[key]
+        lines.append("  %-16s %-11s %d" % (v["name"], v["verdict"], v["count"]))
+    lines.append("")
+    lines.append("行为项（13 项，科恩式）：")
+    bv = threat_engine.behavior_view(
+        fdicts, verify_rules.BEHAVIORS, verify_rules.DETECTOR_TO_BEHAVIORS)
+    observed = [b["behavior"] for b in bv if b["observed"]]
+    lines.append("  %s" % ("、".join(observed) if observed else "未观察到明显系统行为"))
     lines.append("")
     if findings:
         by = {}
@@ -531,16 +562,28 @@ def render_text(findings, counts, verdict, meta, tool_version=VERSION):
 
 
 def render_json(findings, counts, verdict, meta, tool_version=VERSION):
+    fdicts = [f.to_dict() for f in findings]
     return json.dumps({
         "tool": {"name": TOOL_NAME, "cn": CN_NAME, "version": tool_version},
         "meta": meta,
         "verdict": verdict,
         "counts": counts,
         "findings": [f.to_dict() for f in findings],
+        "threat": {
+            "health_score": threat_engine.health_score(fdicts),
+            "taxonomy": threat_engine.taxonomy_view(
+                fdicts, verify_rules.THREAT_TAXONOMY, verify_rules.TAXONOMY_ORDER,
+                verify_rules.DETECTOR_TO_TAXONOMY),
+            "behaviors": threat_engine.behavior_view(
+                fdicts, verify_rules.BEHAVIORS, verify_rules.DETECTOR_TO_BEHAVIORS),
+            "files": threat_engine.file_view(fdicts),
+            "repair_guide": threat_engine.repair_guide(fdicts),
+        },
     }, ensure_ascii=False, indent=2)
 
 
 def render_markdown(findings, counts, verdict, meta, tool_version=VERSION):
+    fdicts = [f.to_dict() for f in findings]
     lines = []
     lines.append("# SKILL VERIFY REPORT")
     lines.append("")
@@ -557,6 +600,33 @@ def render_markdown(findings, counts, verdict, meta, tool_version=VERSION):
     for sev in ("critical", "high", "medium", "low", "info"):
         lines.append("| %s | %d |" % (sev, counts.get(sev, 0)))
     lines.append("")
+    lines.append("**安全健康度评分：%d/100**" % threat_engine.health_score(fdicts))
+    lines.append("")
+    lines.append("## 威胁捕获模型视图（云鼎式 8 类）")
+    lines.append("")
+    lines.append("| 检测点 | verdict | 命中 |")
+    lines.append("|---|---|---|")
+    tv = threat_engine.taxonomy_view(
+        fdicts, verify_rules.THREAT_TAXONOMY, verify_rules.TAXONOMY_ORDER,
+        verify_rules.DETECTOR_TO_TAXONOMY)
+    for key in verify_rules.TAXONOMY_ORDER:
+        v = tv[key]
+        lines.append("| %s | %s | %d |" % (v["name"], v["verdict"], v["count"]))
+    lines.append("")
+    lines.append("## 行为项（科恩式 13 项）")
+    lines.append("")
+    bv = threat_engine.behavior_view(
+        fdicts, verify_rules.BEHAVIORS, verify_rules.DETECTOR_TO_BEHAVIORS)
+    observed = [b["behavior"] for b in bv if b["observed"]]
+    lines.append("观察到：%s" % ("、".join(observed) if observed else "未观察到明显系统行为"))
+    lines.append("")
+    guide = threat_engine.repair_guide(fdicts)
+    if guide:
+        lines.append("## 修复建议指南")
+        lines.append("")
+        for i, g in enumerate(guide, 1):
+            lines.append("%d. %s" % (i, g))
+        lines.append("")
     lines.append("## Findings")
     lines.append("")
     if not findings:

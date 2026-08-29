@@ -27,7 +27,9 @@ It is a **pre-install verifier**, not a sandbox and not a runtime monitor: it on
 
 ## Core value
 
-- **Deterministic static scan** — four blocks: prompt injection, malicious patterns, SKILL.md integrity, permission needs.
+- **Deterministic static scan** — threat capture model aligned with Tencent Cloudding 8 checkpoints (supply chain / command execution / network & exfil / file & sensitive path / prompt injection / remote download-exec / obfuscation / other) + prompt injection + malicious patterns (61 rules incl. path traversal & MCP tool-surface) + SKILL.md integrity + permission needs.
+- **MCP tool-surface analysis (L3)** — traces "tool parameter → dangerous sink" (spawnSync/execSync / arbitrary file read-write); malicious MCP servers → **DO NOT INSTALL**.
+- **Tencent-style dual-view report** — health score (0-100) + 8-checkpoint verdict + 13 behavior items + per-file verdict + repair guide + content hash.
 - **Prompt injection detection** — 8 categories / 28 rules (instruction override, role spoofing, encoded instructions, data exfiltration, delimiter escape, tool self-execution, hidden intent, credential harvesting) plus a base64-decoding heuristic.
 - **Shared malicious-pattern rules** — 54 rules kept in sync with yotta-security-audit (download-and-exec, obfuscation, persistence, exfiltration, credential theft, network calls, privilege escalation, social engineering).
 - **One-line verdict** — SAFE TO INSTALL / REVIEW REQUIRED / INSTALL WITH CAUTION / DO NOT INSTALL, with exit codes aligned to yotta-security-audit and yotta-vetter.
@@ -82,7 +84,7 @@ Exit codes: **0** = SAFE TO INSTALL; **1** = REVIEW REQUIRED; **2** = INSTALL WI
 Sample text output:
 
 ```
-元信 yotta-verify v0.1.1 —— 装前安全扫描
+元信 yotta-verify v0.2.0 —— 装前安全扫描
 目标：./some-skill（扫描 14 个文件）
 
 verdict: SAFE TO INSTALL
