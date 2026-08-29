@@ -1,6 +1,6 @@
 ---
 name: yotta-verify
-version: 0.1.0
+version: 0.1.1
 description: 元信 —— 装任何技能/包前的确定性安全扫描器：prompt injection（提示注入）+ 危险模式 + SKILL.md 完整性 + 权限需求，输出 verdict（SAFE TO INSTALL / INSTALL WITH CAUTION / REVIEW REQUIRED / DO NOT INSTALL）+ audited 徽章。触发：安装/评估任何技能或 npm 包前、给技能做安全验证、生成 audited 徽章、CI 装前闸门；或用户说 装前扫描/验证/audited/安全验证/verify-skill/可信 等。边界：只做确定性静态扫描与报告，不执行被测代码、不联网、不装包、不修复；结论需人工确认，不代替最终决策。
 license: MIT
 ---

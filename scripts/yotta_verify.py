@@ -25,7 +25,7 @@ exit code 语义（与元安/元审一致）：
 用法示例：
   python3 yotta_verify.py scan ./some-skill
   python3 yotta_verify.py scan ./some-skill --json --report report.md --badge
-  python3 yotta_verify.py badge ./some-skill --tests 49 --version 0.1.0
+  python3 yotta_verify.py badge ./some-skill --tests 49 --version 0.1.1
   python3 yotta_verify.py gate ./some-skill --max-severity medium
 """
 import argparse
@@ -51,7 +51,7 @@ _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 import verify_rules  # noqa: E402
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 TOOL_NAME = "yotta-verify"
 CN_NAME = "元信"
 
@@ -74,7 +74,7 @@ MAX_FILE_SIZE = 1_000_000
 MAX_LINE_LEN = verify_rules.MAX_LINE_LEN
 MAX_FILES = 2000
 # 签名数据文件：规则表是扫描器自身的签名数据库，不是被测技能行为，扫描时跳过
-SIGNATURE_DATA_FILES = {"verify_rules.py", "audit_rules.py", "vetter_rules.py"}
+SIGNATURE_DATA_FILES = {"verify_rules.py", "audit_rules.py", "vetter_rules.py", "hardening_rules.py"}
 
 # ── 严重级 / verdict ───────────────────────────────────────────────────────
 _SEVERITY_VALUE = verify_rules.SEVERITY_VALUE

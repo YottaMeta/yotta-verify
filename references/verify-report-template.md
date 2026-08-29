@@ -4,7 +4,7 @@
 
 # SKILL VERIFY REPORT
 
-- 工具：元信 yotta-verify v0.1.0
+- 工具：元信 yotta-verify v0.1.1
 - 目标：<扫描路径>（扫描 N 个文件）
 - 扫描时间：<UTC 时间>
 

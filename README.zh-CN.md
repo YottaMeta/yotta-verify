@@ -93,7 +93,7 @@ python3 scripts/yotta_verify.py gate ./some-skill --max-severity medium
 示例输出：
 
 ```
-元信 yotta-verify v0.1.0 —— 装前安全扫描
+元信 yotta-verify v0.1.1 —— 装前安全扫描
 目标：./some-skill（扫描 14 个文件）
 
 verdict: SAFE TO INSTALL

@@ -23,7 +23,7 @@ python3 scripts/yotta_verify.py badge ./some-skill --out assets/audited.svg
 # 合并外部验证结果（元审/元安 verdict + validate-skill + 测试数）
 python3 scripts/yotta_verify.py badge ./some-skill \
     --validate-skill pass --vetter-verdict "SAFE TO INSTALL" \
-    --audit-verdict "SAFE TO INSTALL" --version 0.1.0 --tests 52
+    --audit-verdict "SAFE TO INSTALL" --version 0.1.1 --tests 52
 ```
 
 输出：本地 SVG（随包发布到 assets/audited.svg）+ shields.io URL。

@@ -201,10 +201,10 @@ def test_badge(tmp):
     findings, counts, verdict, _ = yv.scan_core(str(d), name_hint="demo-clean")
     svg, url = yv.build_badges(verdict, {
         "validate": "PASS", "vetter": yv.VERDICT_SAFE,
-        "audit": yv.VERDICT_SAFE, "version": "0.1.0", "tests": 18})
+        "audit": yv.VERDICT_SAFE, "version": "0.1.1", "tests": 18})
     check("SVG 含 verified 段", "verified" in svg)
     check("SVG 含 validate-skill 段", "validate-skill" in svg)
-    check("SVG 含 version 段", "0.1.0" in svg)
+    check("SVG 含 version 段", "0.1.1" in svg)
     check("SVG 含 tests 段", "tests" in svg)
     check("SVG 合法 XML 根", svg.startswith("<svg") and svg.endswith("</svg>"))
     check("shields URL 含 verdict", yv.VERDICT_SAFE.replace(" ", "%20") in url)
@@ -252,7 +252,7 @@ def test_tarball(tmp):
 def test_version():
     print("== 版本 ==")
     res = run_cli(["--version"])
-    check("--version 输出 0.1.0", "0.1.0" in res.stdout, res.stdout)
+    check("--version 输出 0.1.1", "0.1.1" in res.stdout, res.stdout)
 
 
 def test_report(tmp):
