@@ -9,7 +9,7 @@
   gate    CI 闸门（--max-severity，超出即失败）
 
 设计原则：
-- 纯 Python 3.8+ 标准库，零外部依赖；Windows/Linux/macOS 通用。
+- 纯 Python 3.8+ 标准库，零依赖；Windows/Linux/macOS 通用。
 - 只读静态检测：绝不执行被测代码、不联网、不装包、不修复。
 - 规则复用：危险模式 = 元安 audit_rules 同步副本（verify_rules.AUDIT_PATTERN_RULES）；
   prompt injection = 元信独有规则（verify_rules.PIJ_PATTERN_RULES）。
@@ -52,7 +52,7 @@ sys.path.insert(0, str(_HERE))
 import verify_rules  # noqa: E402
 import threat_engine  # noqa: E402
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 TOOL_NAME = "yotta-verify"
 CN_NAME = "元信"
 
@@ -430,7 +430,7 @@ def is_detector_skill(root):
 def downgrade_detector_docs(findings, root):
     """检测技能文档中的检测模式描述命中 → 降级为 info（固有属性，非实际行为）。
 
-    对齐腾讯云鼎：对「安全检测技能」区分『检测能力文档』与『实际行为』。
+    对「安全检测技能」区分『检测能力文档』与『实际行为』。
     仅降级文档文件（.md/.txt）中的命中；脚本代码命中保持原判级。
     """
     if not is_detector_skill(root):
@@ -557,7 +557,7 @@ def render_text(findings, counts, verdict, meta, tool_version=VERSION):
     lines.append("发现：%s" % " / ".join(parts))
     lines.append("安全健康度评分：%d/100" % threat_engine.health_score(fdicts))
     lines.append("")
-    lines.append("威胁捕获模型（8 类，云鼎式）：")
+    lines.append("威胁捕获模型（8 类）：")
     tv = threat_engine.taxonomy_view(
         fdicts, verify_rules.THREAT_TAXONOMY, verify_rules.TAXONOMY_ORDER,
         verify_rules.DETECTOR_TO_TAXONOMY)
@@ -565,7 +565,7 @@ def render_text(findings, counts, verdict, meta, tool_version=VERSION):
         v = tv[key]
         lines.append("  %-16s %-11s %d" % (v["name"], v["verdict"], v["count"]))
     lines.append("")
-    lines.append("行为项（13 项，科恩式）：")
+    lines.append("行为项（13 项）：")
     bv = threat_engine.behavior_view(
         fdicts, verify_rules.BEHAVIORS, verify_rules.DETECTOR_TO_BEHAVIORS)
     observed = [b["behavior"] for b in bv if b["observed"]]
@@ -634,7 +634,7 @@ def render_markdown(findings, counts, verdict, meta, tool_version=VERSION):
     lines.append("")
     lines.append("**安全健康度评分：%d/100**" % threat_engine.health_score(fdicts))
     lines.append("")
-    lines.append("## 威胁捕获模型视图（云鼎式 8 类）")
+    lines.append("## 威胁捕获模型视图（8 类）")
     lines.append("")
     lines.append("| 检测点 | verdict | 命中 |")
     lines.append("|---|---|---|")
@@ -645,7 +645,7 @@ def render_markdown(findings, counts, verdict, meta, tool_version=VERSION):
         v = tv[key]
         lines.append("| %s | %s | %d |" % (v["name"], v["verdict"], v["count"]))
     lines.append("")
-    lines.append("## 行为项（科恩式 13 项）")
+    lines.append("## 行为项（13 项）")
     lines.append("")
     bv = threat_engine.behavior_view(
         fdicts, verify_rules.BEHAVIORS, verify_rules.DETECTOR_TO_BEHAVIORS)
@@ -746,18 +746,6 @@ def shields_url(verdict):
     return "https://img.shields.io/badge/verified-%s-%s" % (verdict.replace(" ", "%20"), color)
 
 
-# ── Pro 分层骨架 ───────────────────────────────────────────────────────────
-
-def check_pro(args):
-    """Pro 骨架：--pro 需带 --license；未带则提示并降级免费核心。"""
-    if not getattr(args, "pro", False):
-        return False
-    if getattr(args, "license", None):
-        return True
-    print("提示：Pro 规则集需要 license key（--pro --license <key>）；当前按免费核心扫描。")
-    return False
-
-
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
 def _name_hint(target):
@@ -765,7 +753,6 @@ def _name_hint(target):
 
 
 def cmd_scan(args):
-    pro = check_pro(args)
     findings, counts, verdict, meta = scan_core(args.path, name_hint=_name_hint(args.path))
     code = exit_code_of(verdict)
     # gate 模式
@@ -805,7 +792,6 @@ def verdict_worst(findings):
 
 
 def cmd_badge(args):
-    pro = check_pro(args)
     extra = {
         "validate": getattr(args, "validate_skill", None),
         "vetter": getattr(args, "vetter_verdict", None),
@@ -872,8 +858,6 @@ def main(argv=None):
     p_scan.add_argument("--report")
     p_scan.add_argument("--badge", nargs="?", const="assets/audited.svg", default=None)
     p_scan.add_argument("--max-severity")
-    p_scan.add_argument("--pro", action="store_true")
-    p_scan.add_argument("--license")
     p_scan.set_defaults(func=cmd_scan)
 
     p_badge = sub.add_parser("badge", help="生成 audited 徽章（本地 SVG + shields.io URL）")
@@ -884,8 +868,6 @@ def main(argv=None):
     p_badge.add_argument("--audit-verdict")
     p_badge.add_argument("--tests", type=int)
     p_badge.add_argument("--version")
-    p_badge.add_argument("--pro", action="store_true")
-    p_badge.add_argument("--license")
     p_badge.set_defaults(func=cmd_badge)
 
     p_report = sub.add_parser("report", help="生成验证报告（Markdown / JSON）")

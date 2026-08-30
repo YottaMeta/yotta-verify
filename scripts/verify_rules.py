@@ -56,7 +56,7 @@ AUDIT_PATTERN_RULES = [
     # ── Obfuscation 混淆执行 ──────────────────────────────────────────────
     Rule("OBF-001", "Obfuscation", "high",
          r"\beval\s*\(\s*[^\"'\x600-9]",
-         "eval 传入非字面量参数（可能执行外部输入）", 80),
+         "eval 传入非字面量参数（可能执行不可信输入）", 80),
     Rule("OBF-002", "Obfuscation", "high",
          r"(?<!\.)\bexec\s*\(\s*[^\"'\x600-9]",
          "exec 传入非字面量参数", 80),
@@ -224,7 +224,7 @@ AUDIT_PATTERN_RULES = [
          "MCP 工具参数对象直接流入同步子进程执行（spawnSync/execSync）", 95),
     Rule("MCE-003", "MCPCommandExec", "critical",
          r"(?i)(?:subprocess\.)?(?:Popen|call|run)\s*\([^)]*shell\s*=\s*True[^)]*(?:params|args|argv|input|command|user_input|cmd)",
-         "subprocess 以 shell=True 执行外部输入", 92),
+         "subprocess 以 shell=True 执行不可信输入", 92),
 
     # ── MCPFileAccess MCP 工具面任意文件读写（2026-08-30 增强：文件操作）───
     Rule("MFA-001", "MCPFileAccess", "high",
@@ -274,7 +274,7 @@ PIJ_PATTERN_RULES = [
     # ── 数据外传指令 ────────────────────────────────────────────────────
     Rule("PIJ-011", "PromptInjection", "high",
          r"(?i)(?:send|upload|post|exfiltrate|transmit)\s+(?:the|all|your|any)?\s*(?:contents?|data|files?|env\b|environment|keys?|secrets?|memory|context|conversation|prompts?)\s*(?:to|via|using)\s*(?:this\s+)?(?:url|endpoint|server|http)",
-         "数据外传指令：把上下文/密钥/记忆发送到外部地址", 85),
+         "数据外传指令：把上下文/密钥/记忆发送到远端地址", 85),
     Rule("PIJ-012", "PromptInjection", "high",
          r"(?i)(?:把|将|请将)(?:你的|所有|全部)?(?:上下文|记忆|环境变量|密钥|文件|对话|提示词).{0,40}(?:发送|上传|提交|传给|发给)",
          "数据外传指令（中文）", 80),
@@ -348,9 +348,9 @@ SENSITIVE_FILENAMES = [
 ]
 
 # ══════════════════════════════════════════════════════════════════════════
-# 威胁捕获模型（2026-08-30 增强：腾讯云鼎官方 8 检测点 + 科恩 13 行为项口径）
+# 威胁捕获模型（2026-08-30 增强：8 检测点 + 13 行为项口径）
 # ══════════════════════════════════════════════════════════════════════════
-# 官方 8 检测点（腾讯云鼎威胁行为图谱，2026-08-30）
+# 官方 8 检测点（2026-08-30）
 THREAT_TAXONOMY = {
     "supply_chain": "供应链风险",
     "command_execution": "命令执行风险",
@@ -383,21 +383,21 @@ DETECTOR_TO_TAXONOMY = {
     "MCPToolSurface": "command_execution",
 }
 
-# 科恩 13 行为项（腾讯科恩实验室口径，2026-08-30）
+# 13 行为项（2026-08-30）
 BEHAVIORS = (
     "安装依赖包", "收集系统信息", "收集用户信息", "创建定时任务", "DNS 查询", "写入文件",
-    "HTTP 请求", "读取环境变量", "收集网络配置信息", "写入配置文件", "调用外部 API",
+    "HTTP 请求", "读取环境变量", "收集网络配置信息", "写入配置文件", "调用远端 API",
     "读取文件", "修改 AI 配置",
 )
 
-# detector → 科恩行为项（一/多个；攻击模式类如注入/混淆不映射具体行为）
+# detector → 行为项（一/多个；攻击模式类如注入/混淆不映射具体行为）
 DETECTOR_TO_BEHAVIORS = {
     "DownloadExec": ("安装依赖包", "HTTP 请求"),
     "Obfuscation": (),
     "Persistence": ("创建定时任务", "写入配置文件"),
-    "Exfiltration": ("HTTP 请求", "调用外部 API"),
+    "Exfiltration": ("HTTP 请求", "调用远端 API"),
     "CredentialTheft": ("读取文件", "收集用户信息"),
-    "NetworkCall": ("DNS 查询", "HTTP 请求", "调用外部 API"),
+    "NetworkCall": ("DNS 查询", "HTTP 请求", "调用远端 API"),
     "PrivilegeEscalation": ("修改 AI 配置",),
     "SocialEngineering": (),
     "PromptInjection": (),

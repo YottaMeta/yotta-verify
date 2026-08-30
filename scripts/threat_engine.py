@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """threat_engine.py — yotta-verify（元信）威胁捕获引擎（2026-08-30 增强）。
 
-L2/L3 引擎（对齐腾讯云鼎 8 检测点 + 科恩 13 行为项口径，见 verify_rules 的
+L2/L3 引擎（8 检测点威胁捕获模型 + 13 行为项口径，见 verify_rules 的
 THREAT_TAXONOMY / DETECTOR_TO_TAXONOMY / BEHAVIORS / DETECTOR_TO_BEHAVIORS）：
 
 - L3 MCP 工具面（analyze_mcp_tool_surface）：识别 MCP server 的工具集，
@@ -219,7 +219,7 @@ def analyze_dataflow(files, read_lines):
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# 综合报告视图（2026-08-30 增强：腾讯式双视角 + 评分 + 逐文件）
+# 综合报告视图（2026-08-30 增强：双视角报告 + 评分 + 逐文件）
 # ══════════════════════════════════════════════════════════════════════════
 
 SEVERITY_DEDUCT = {"critical": 45, "high": 25, "medium": 10, "low": 3, "info": 0}
@@ -241,7 +241,7 @@ def health_score(findings):
 
 
 def taxonomy_view(findings, taxonomy, order, det_to_tax):
-    """云鼎式 8 类威胁图谱：每类 verdict（danger/suspicious/safe/n/a）。"""
+    """8 类威胁图谱：每类 verdict（danger/suspicious/safe/n/a）。"""
     hits = {}
     for f in findings:
         det = f.get("detector", "")
@@ -272,7 +272,7 @@ def taxonomy_view(findings, taxonomy, order, det_to_tax):
 
 
 def behavior_view(findings, behaviors, det_to_behaviors):
-    """科恩式 13 行为项：observed（观察到）/ none。"""
+    """13 行为项：observed（观察到）/ none。"""
     observed = {}
     for f in findings:
         bs = f.get("behaviors")
@@ -288,7 +288,7 @@ def behavior_view(findings, behaviors, det_to_behaviors):
 
 
 def file_view(findings):
-    """科恩式逐文件 verdict：每文件最高严重级。"""
+    """逐文件 verdict：每文件最高严重级。"""
     per_file = {}
     for f in findings:
         fp = f.get("file", "?")
@@ -299,7 +299,7 @@ def file_view(findings):
 
 
 def build_content_hash(files, read_lines):
-    """内容 hash：全部扫描文件内容的 SHA256（确定性汇总，对齐腾讯报告「内容 Hash」）。"""
+    """内容 hash：全部扫描文件内容的 SHA256（确定性汇总）。"""
     import hashlib
     h = hashlib.sha256()
     for path, rel in files:
@@ -314,7 +314,7 @@ def build_content_hash(files, read_lines):
 
 
 def repair_guide(findings):
-    """修复建议指南：按 taxonomy 分组给可执行建议（腾讯式）。"""
+    """修复建议指南：按 taxonomy 分组给可执行建议。"""
     guide = []
     seen = set()
     for f in findings:

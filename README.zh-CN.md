@@ -11,7 +11,7 @@
 <b>verdict</b> 与可随包发布的 <b>audited 徽章</b>。</p>
 <p align="center">触发场景：安装 / 评估任何技能或 npm 包前、给自己的技能生成 audited 徽章、
 在 CI 里加装前扫描闸门。</p>
-<p align="center">零外部依赖（Python 3.8+ 标准库）；Windows + Linux + macOS；纯本地离线——
+<p align="center">零依赖（Python 3.8+ 标准库）；Windows + Linux + macOS；纯本地离线——
 不联网、不执行被测代码。</p>
 
 <p align="center">
@@ -34,9 +34,9 @@
 
 ## 核心价值
 
-- **确定性静态扫描**——威胁捕获模型（对齐腾讯云鼎 8 检测点：供应链 / 命令执行 / 网络请求与数据外传 / 文件操作与敏感路径访问 / 提示注入 / 远程脚本拉取后即运行 / 编码混淆 / 其他）+ 提示注入 + 危险模式（61 条，含路径穿越 / MCP 工具面）+ SKILL.md 完整性 + 权限需求。
+- **确定性静态扫描**——8 检测点威胁捕获模型（供应链 / 命令执行 / 网络请求与数据外传 / 文件操作与敏感路径访问 / 提示注入 / 远程脚本拉取后即运行 / 编码混淆 / 其他）+ 提示注入 + 危险模式（61 条，含路径穿越 / MCP 工具面）+ SKILL.md 完整性 + 权限需求。
 - **MCP 工具面分析（L3，新增）**——识别 MCP server 工具集，追踪「工具参数 → 危险 sink」（spawnSync / execSync / 任意文件读写）；恶意 MCP 判 **DO NOT INSTALL**。
-- **v0.2.0 腾讯式双视角报告（新增）**——安全健康度评分（0-100）+ 8 检测点逐类 verdict + 科恩式 13 行为项 + 逐文件 verdict + 修复建议指南 + 内容 hash。
+- **双视角综合报告（新增）**——安全健康度评分（0-100）+ 8 检测点逐类 verdict + 13 行为项 + 逐文件 verdict + 修复建议指南 + 内容 hash。
 - **提示注入检测**——8 类 28 条规则（指令覆盖 / 角色伪造 / 编码指令 / 数据外传 / 分隔符逃逸 /
   工具自执行 / 隐藏意图 / 凭据采集）+ base64 编码指令启发式。
 - **危险模式规则与元安共用**——54 条规则与 yotta-security-audit 保持同步
@@ -81,7 +81,7 @@ python3 scripts/yotta_verify.py scan ./some-skill
 # JSON + Markdown 报告 + audited 徽章
 python3 scripts/yotta_verify.py scan ./some-skill --json --report report.md --badge
 
-# 合并外部验证结果的 audited 徽章
+# 合并验证结果的 audited 徽章
 python3 scripts/yotta_verify.py badge ./some-skill --validate-skill pass     --vetter-verdict "SAFE TO INSTALL" --audit-verdict "SAFE TO INSTALL" --tests 52
 
 # CI 闸门：最严重级超过 medium 即失败
@@ -94,7 +94,7 @@ python3 scripts/yotta_verify.py gate ./some-skill --max-severity medium
 示例输出：
 
 ```
-元信 yotta-verify v0.2.0 —— 装前安全扫描
+元信 yotta-verify v0.2.1 —— 装前安全扫描
 目标：./some-skill（扫描 14 个文件）
 
 verdict: SAFE TO INSTALL

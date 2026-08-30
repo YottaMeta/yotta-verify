@@ -88,7 +88,7 @@ def test_rules():
           "got %d" % len(vr.PATTERN_RULES))
     check("SENSITIVE 8 条", len(vr.SENSITIVE_FILENAMES) == 8)
     check("威胁捕获模型 8 类", len(vr.THREAT_TAXONOMY) == 8)
-    check("科恩行为项 13 项", len(vr.BEHAVIORS) == 13)
+    check("行为项 13 项", len(vr.BEHAVIORS) == 13)
     check("规则可预编译", yv._compile() is not None)
     # PIJ 规则都是元信独有（无 id 冲突）
     ids = [r.id for r in vr.PATTERN_RULES]
@@ -254,7 +254,7 @@ def test_tarball(tmp):
 def test_version():
     print("== 版本 ==")
     res = run_cli(["--version"])
-    check("--version 输出 0.2.1", "0.2.1" in res.stdout, res.stdout)
+    check("--version 输出 0.2.2", "0.2.2" in res.stdout, res.stdout)
 
 
 def test_report(tmp):
@@ -275,17 +275,6 @@ def test_self_scan():
     check("自扫无 high", counts.get("high", 0) == 0, str(counts))
     check("自扫 verdict 非 DO NOT INSTALL", verdict != yv.VERDICT_BLOCK, verdict)
 
-
-def test_pro_skeleton():
-    print("== Pro 分层骨架 ==")
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--pro", action="store_true")
-    parser.add_argument("--license")
-    a = parser.parse_args(["--pro", "--license", "test-key"])
-    check("--pro + license 启用", yv.check_pro(a) is True)
-    a2 = parser.parse_args(["--pro"])
-    check("--pro 无 license 降级", yv.check_pro(a2) is False)
 
 
 EVIL_MCP_VAR = """const { spawnSync } = require('child_process');
@@ -383,7 +372,6 @@ def main():
         test_version()
         test_report(tmp)
         test_self_scan()
-        test_pro_skeleton()
         test_threat_engine(tmp)
         test_yottamemory_clean()
     finally:
