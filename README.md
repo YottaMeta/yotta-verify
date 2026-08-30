@@ -45,7 +45,6 @@ It is a **pre-install verifier**, not a sandbox and not a runtime monitor: it on
 | **Fully local offline** | Scans directories and npm tarballs on disk; nothing is executed or uploaded |
 | **Works with any skill** | Agent skills, npm packages, downloaded ZIPs — point it at a folder |
 | **Family synergy** | Malicious-pattern rules shared with yotta-security-audit; verdicts can merge with yotta-vetter / yotta-security-audit |
-| **Free core + Pro** | The whole scanner is free; Pro adds advanced heuristics, batch scans and enterprise reports |
 
 ## Commands
 

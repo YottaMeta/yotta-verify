@@ -52,7 +52,7 @@ sys.path.insert(0, str(_HERE))
 import verify_rules  # noqa: E402
 import threat_engine  # noqa: E402
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 TOOL_NAME = "yotta-verify"
 CN_NAME = "元信"
 
@@ -415,6 +415,35 @@ _PERM_WRITE = verify_rules.PERM_WRITE_RE
 _PERM_READ_SENS = verify_rules.PERM_READ_SENS_RE
 
 
+_DETECTOR_SIG_FILES = {"audit_rules.py", "verify_rules.py", "vetter_rules.py", "hardening_rules.py"}
+_DOC_EXT = {".md", ".txt", ".markdown", ".rst"}
+
+
+def is_detector_skill(root):
+    """目标目录是否含检测器签名文件（audit_rules/verify_rules/vetter_rules/hardening_rules）。"""
+    for name in _DETECTOR_SIG_FILES:
+        if (root / name).is_file() or (root / "scripts" / name).is_file():
+            return True
+    return False
+
+
+def downgrade_detector_docs(findings, root):
+    """检测技能文档中的检测模式描述命中 → 降级为 info（固有属性，非实际行为）。
+
+    对齐腾讯云鼎：对「安全检测技能」区分『检测能力文档』与『实际行为』。
+    仅降级文档文件（.md/.txt）中的命中；脚本代码命中保持原判级。
+    """
+    if not is_detector_skill(root):
+        return
+    for f in findings:
+        if f.severity in ("critical", "high", "medium"):
+            if Path(f.file_path).suffix.lower() in _DOC_EXT:
+                f.severity = "info"
+                f.rule_id = (f.rule_id or f.detector) + "-DOC"
+                f.description = f.description + "（检测技能文档描述，非实际行为）"
+                f.confidence = 30
+
+
 def permission_summary(files, findings):
     """扫描脚本中声明的权限需求（info 级提示，不入 verdict 决策）。"""
     hits = {"网络调用": 0, "命令执行": 0, "文件写入": 0, "读取敏感文件": 0}
@@ -489,6 +518,9 @@ def scan_core(target, name_hint=None):
     findings = scan_patterns(files)
     check_skill_integrity(root, findings, name_hint)
     permission_summary(files, findings)
+    # 检测技能文档降级（2026-08-30）：目标含检测器签名文件（audit_rules 等）→
+    # 文档中命中「检测能力描述」（注入模式/凭据等字面）属固有属性，降级为 info，非实际行为。
+    downgrade_detector_docs(findings, root)
     # L2/L3 威胁捕获引擎（2026-08-30 增强：数据流 + MCP 工具面）
     for fd in threat_engine.analyze_mcp_tool_surface(files, read_lines):
         findings.append(Finding(

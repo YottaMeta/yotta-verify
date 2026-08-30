@@ -42,4 +42,4 @@ python3 scripts/yotta_verify.py badge ./some-skill \
 
 ## 免费 / Pro
 
-免费核心可生成全部徽章段；Pro 提供批量徽章与自动化阈值（--pro --license <key>）。
+可生成全部徽章段；批量徽章与自动化阈值能力预留（--pro 可选）。
