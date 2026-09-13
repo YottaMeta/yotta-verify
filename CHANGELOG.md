@@ -5,6 +5,7 @@
 **P0-4.1 元信 before_install 试点**：
 
 - 新增 `skill-manifest.json`，声明 `before_install` / `scan_skill` / `on_fail: block` / `fallback: wrapper`。
+- 发布工作流 `.github/workflows/publish.yml` 纳入版本库，标签推送可触发 GitHub Actions。
 - 元阁安装管线通过统一 hook 适配器评估 `before_install`，扫描不通过时阻断落位并保留旧版本。
 - 适配器证据写入 `~/.yottaskills/hook-log.jsonl`，安装证据仍写 `install-log.jsonl`。
 - 发布件包含 `skill-manifest.json`，供元阁安装器读取。
