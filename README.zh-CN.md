@@ -46,6 +46,7 @@
 - **audited 徽章**——本地 SVG + shields.io URL；合并 validate-skill 结果、元安 / 元审 verdict、
   版本与引擎测试数。
 - **CI 闸门**——最严重级超过阈值即让流水线失败。
+- **安装器 hook 声明**——通过 `before_install` manifest 让元阁在替换已装技能前执行阻断门禁，并保留本地审计证据。
 
 ## 为什么用它
 

@@ -1,5 +1,14 @@
 # 更新日志
 
+## v0.3.0 (2026-09-13)
+
+**P0-4.1 元信 before_install 试点**：
+
+- 新增 `skill-manifest.json`，声明 `before_install` / `scan_skill` / `on_fail: block` / `fallback: wrapper`。
+- 元阁安装管线通过统一 hook 适配器评估 `before_install`，扫描不通过时阻断落位并保留旧版本。
+- 适配器证据写入 `~/.yottaskills/hook-log.jsonl`，安装证据仍写 `install-log.jsonl`。
+- 发布件包含 `skill-manifest.json`，供元阁安装器读取。
+
 ## v0.2.2 (2026-08-30)
 
 - 措辞规范：正文不再写版本号；统一对外表述。
@@ -29,7 +38,7 @@
 
 - 签名数据豁免：SIGNATURE_DATA_FILES 增加 hardening_rules.py（元安规则表），扫描元安
   （yotta-agent-hardening）仓库时不再把规则签名表误报为被测代码；与元安 S4 发布后家族
-  规则表结构对齐（续18 遗留，2026-08-29 拍板升版）。
+  规则表结构对齐（2026-08-29 升版）。
 
 ## v0.1.0 (2026-08-29)
 

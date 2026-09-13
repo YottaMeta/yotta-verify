@@ -35,6 +35,7 @@ It is a **pre-install verifier**, not a sandbox and not a runtime monitor: it on
 - **One-line verdict** — SAFE TO INSTALL / REVIEW REQUIRED / INSTALL WITH CAUTION / DO NOT INSTALL, with exit codes aligned to yotta-security-audit and yotta-vetter.
 - **Audited badge** — local SVG + shields.io URL; merges validate-skill result, yotta-vetter / yotta-security-audit verdicts, version and engine test count.
 - **CI gate** — fail the pipeline when severity exceeds a threshold.
+- **Installer hook declaration** — exposes a `before_install` manifest requirement so YottaSkills can block before replacing an installed skill and keep local audit evidence.
 
 ## Why use it
 

@@ -15,6 +15,7 @@ const os = require('os');
 
 const SKILL_NAME = 'yotta-verify';
 const PKG_ROOT = path.join(__dirname, '..');
+const VERSION = '0.3.0';
 
 // 智能体 -> 用户级默认技能目录（dirs 按优先级排列；--agent 装到第一个）
 // 依据官方文档：.agents/skills 并非通用目录，被 OpenCode / Cursor / Cline / Amp /
@@ -87,6 +88,10 @@ function main() {
   const args = process.argv.slice(2);
   const isGlobal = args.includes('-g') || args.includes('--global');
   const list = args.includes('--list') || args.includes('-l');
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log('yotta-verify v' + VERSION);
+    return;
+  }
   let explicitDir = null;
   const di = args.indexOf('--dir');
   if (di !== -1 && args[di + 1]) explicitDir = args[di + 1];

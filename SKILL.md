@@ -1,6 +1,6 @@
 ---
 name: yotta-verify
-version: 0.2.2
+version: 0.3.0
 description: 元信 —— 装任何技能/包前的确定性安全扫描器：prompt injection（提示注入）+ 危险模式 + SKILL.md 完整性 + 权限需求，输出 verdict（SAFE TO INSTALL / INSTALL WITH CAUTION / REVIEW REQUIRED / DO NOT INSTALL）+ audited 徽章。触发：安装/评估任何技能或 npm 包前、给技能做安全验证、生成 audited 徽章、CI 装前闸门；或用户说 装前扫描/验证/audited/安全验证/verify-skill/可信 等。边界：只做确定性静态扫描与报告，不执行被测代码、不联网、不装包、不修复；结论需人工确认，不代替最终决策。
 license: MIT
 ---
@@ -14,6 +14,8 @@ license: MIT
 - **badge**：生成 audited 徽章（本地 SVG + shields.io URL；validate-skill + 元安/元审 verdict + 版本 + 引擎测试数）。
 - **report**：生成 SKILL VERIFY REPORT（Markdown / JSON）。
 - **gate**：CI 装前闸门（默认阈值 medium，超出即失败）。
+
+元阁安装链路会读取 `skill-manifest.json` 中的 `before_install` 声明：扫描不通过时阻断落位并保留旧版本，证据写入元阁本地审计日志。
 
 零依赖（Python 3.8+ 标准库），Windows + Linux + macOS 通用。危险模式规则与元安
 （yotta-security-audit）共用（scripts/verify_rules.py 为同步副本，勿手改）。

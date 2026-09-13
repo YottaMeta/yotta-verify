@@ -254,7 +254,7 @@ def test_tarball(tmp):
 def test_version():
     print("== 版本 ==")
     res = run_cli(["--version"])
-    check("--version 输出 0.2.2", "0.2.2" in res.stdout, res.stdout)
+    check("--version 输出 0.3.0", "0.3.0" in res.stdout, res.stdout)
 
 
 def test_report(tmp):
