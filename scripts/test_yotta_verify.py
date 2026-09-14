@@ -251,10 +251,122 @@ def test_tarball(tmp):
     check("tarball critical ≥ 1", counts.get("critical", 0) >= 1)
 
 
+def test_safe_extract_rejects_links(tmp):
+    print("== tarball 链接成员安全检查 ==")
+
+    def rejects(member):
+        tag = member.type.decode("ascii", "replace")
+        tgz = tmp / ("unsafe-" + tag + ".tgz")
+        dest = tmp / ("unsafe-" + tag)
+        dest.mkdir(parents=True, exist_ok=True)
+        with tarfile.open(str(tgz), "w:gz") as tf:
+            tf.addfile(member)
+        try:
+            with tarfile.open(str(tgz), "r:gz") as tf:
+                yv._safe_extract(tf, dest)
+        except ValueError:
+            return True
+        except Exception:
+            return False
+        return False
+
+    symlink = tarfile.TarInfo("package/link")
+    symlink.type = tarfile.SYMTYPE
+    symlink.linkname = "../../outside"
+    check("拒绝符号链接成员", rejects(symlink))
+
+    hardlink = tarfile.TarInfo("package/hard")
+    hardlink.type = tarfile.LNKTYPE
+    hardlink.linkname = "../../outside"
+    check("拒绝硬链接成员", rejects(hardlink))
+
+
+def test_package_scan_name_hint(tmp):
+    print("== npm 包根目录名提示 ==")
+    package_json = json.dumps({
+        "name": "@yottameta/demo-clean",
+        "version": "1.0.0",
+    })
+    package_root = make_skill(tmp / "package", {
+        "SKILL.md": CLEAN_SKILL,
+        "package.json": package_json,
+    })
+
+    res_dir = run_cli(["scan", str(package_root), "--json"])
+    data_dir = json.loads(res_dir.stdout)
+    check("package/ 不误报 STR-004",
+          not any(f.get("rule_id") == "STR-004" for f in data_dir.get("findings", [])),
+          str(data_dir.get("findings", [])))
+    check("package/ 无 medium",
+          data_dir.get("counts", {}).get("medium", 0) == 0,
+          str(data_dir.get("counts")))
+
+    tgz = tmp / "demo-clean.tgz"
+    with tarfile.open(str(tgz), "w:gz") as tf:
+        for p in sorted(package_root.rglob("*")):
+            if p.is_file():
+                tf.add(str(p), arcname="package/" + str(p.relative_to(package_root)))
+    res_tar = run_cli(["scan", str(tgz), "--json"])
+    data_tar = json.loads(res_tar.stdout)
+    check("npm tarball 不误报 STR-004",
+          not any(f.get("rule_id") == "STR-004" for f in data_tar.get("findings", [])),
+          str(data_tar.get("findings", [])))
+    check("npm tarball 无 medium",
+          data_tar.get("counts", {}).get("medium", 0) == 0,
+          str(data_tar.get("counts")))
+
+
+def test_real_directory_mismatch_remains(tmp):
+    print("== 真实目录名不一致仍上报 ==")
+    d = make_skill(tmp / "wrong-name", {"SKILL.md": CLEAN_SKILL})
+    res = run_cli(["scan", str(d), "--json"])
+    data = json.loads(res.stdout)
+    check("错目录名仍命中 STR-004 medium",
+          any(f.get("rule_id") == "STR-004" and f.get("severity") == "medium"
+              for f in data.get("findings", [])),
+          str(data.get("findings", [])))
+
+
+def test_package_name_mismatch_remains(tmp):
+    print("== package.json 名称不一致仍上报 ==")
+    package_root = make_skill(tmp / "pkg-wrong", {
+        "SKILL.md": CLEAN_SKILL,
+        "package.json": json.dumps({
+            "name": "@yottameta/other-name",
+            "version": "1.0.0",
+        }),
+    })
+    # 模拟 npm 解压后的标准 package/ 根目录名。
+    standard_root = tmp / "package-mismatch" / "package"
+    if standard_root.exists():
+        shutil.rmtree(standard_root)
+    shutil.copytree(package_root, standard_root)
+    res = run_cli(["scan", str(standard_root), "--json"])
+    data = json.loads(res.stdout)
+    check("错 package name 仍命中 STR-004 medium",
+          any(f.get("rule_id") == "STR-004" and f.get("severity") == "medium"
+              for f in data.get("findings", [])),
+          str(data.get("findings", [])))
+
+
+def test_detector_skill_mismatch_remains(tmp):
+    print("== 检测型技能真实错目录名仍上报 ==")
+    d = make_skill(tmp / "detector-wrong-name", {
+        "SKILL.md": CLEAN_SKILL,
+        "scripts/verify_rules.py": "# detector signature for downgrade regression\n",
+    })
+    res = run_cli(["scan", str(d), "--json"])
+    data = json.loads(res.stdout)
+    check("检测型技能错目录名仍命中 STR-004 medium",
+          any(f.get("rule_id") == "STR-004" and f.get("severity") == "medium"
+              for f in data.get("findings", [])),
+          str(data.get("findings", [])))
+
+
 def test_version():
     print("== 版本 ==")
     res = run_cli(["--version"])
-    check("--version 输出 0.3.0", "0.3.0" in res.stdout, res.stdout)
+    check("--version 输出 0.3.1", "0.3.1" in res.stdout, res.stdout)
 
 
 def test_report(tmp):
@@ -369,6 +481,11 @@ def main():
         test_gate(tmp)
         test_json(tmp)
         test_tarball(tmp)
+        test_safe_extract_rejects_links(tmp)
+        test_package_scan_name_hint(tmp)
+        test_real_directory_mismatch_remains(tmp)
+        test_package_name_mismatch_remains(tmp)
+        test_detector_skill_mismatch_remains(tmp)
         test_version()
         test_report(tmp)
         test_self_scan()

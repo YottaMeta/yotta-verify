@@ -1,5 +1,15 @@
 # 更新日志
 
+## v0.3.1 (2026-09-14)
+
+**STR-004 误报修复**：
+
+- npm tarball 与解压后的 `package/` 根目录不再用临时目录名或压缩包文件名做 STR-004 比对；改为从根 `package.json` 的 `name` 推导期望 slug。
+- 真实安装目录名不一致、`package.json` 名称与 frontmatter name 不一致时仍保留 STR-004 medium。
+- 检测型技能的文档降级不再吞掉 `Structure` 类发现，真实错目录名仍保留 STR-004 medium。
+- 新增回归：`package/` 目录、npm tarball、真实错目录名、错 package name。
+- 安全加固：tarball 解压拒绝符号链接、硬链接、设备与 FIFO 成员，Python 3.12+ 叠加官方 `data` 过滤器；新增两组链接成员回归。
+
 ## v0.3.0 (2026-09-13)
 
 **P0-4.1 元信 before_install 试点**：
