@@ -1,6 +1,6 @@
 ---
 name: yotta-verify
-version: 0.3.1
+version: 0.3.2
 description: 元信 —— 装任何技能/包前的确定性安全扫描器：prompt injection（提示注入）+ 危险模式 + SKILL.md 完整性 + 权限需求，输出 verdict（SAFE TO INSTALL / INSTALL WITH CAUTION / REVIEW REQUIRED / DO NOT INSTALL）+ audited 徽章。触发：安装/评估任何技能或 npm 包前、给技能做安全验证、生成 audited 徽章、CI 装前闸门；或用户说 装前扫描/验证/audited/安全验证/verify-skill/可信 等。边界：只做确定性静态扫描与报告，不执行被测代码、不联网、不装包、不修复；结论需人工确认，不代替最终决策。
 license: MIT
 ---
@@ -108,8 +108,10 @@ exit code 与元安 / 元审一致（0 / 1 / 2 / 3 / 4 = 错误）。
 ## 自扫说明
 
 元信自扫（dogfooding）通过：对自身安装目录扫描无 critical / high。扫描器规则表
-（verify_rules.py 等）为签名数据自动跳过；测试文件（构造样例）扫描跳过、发布包排除测试；
-正例 yotta-memory v0.8.5（修复后）判 SAFE；报告中的 URL 类 low 提示属预期（shields.io 链接）。
+（verify_rules.py 等）为签名数据——**按「路径 `scripts/<规则表名>.py` + 内容 SHA-256」双绑定**
+跳过，改名或改内容都不再豁免（v0.3.2 起）；`test_*.py` 只在持有已发布签名数据的自家包里跳过，
+非自家包同名文件照常扫描，发布包本身用 `!scripts/test_*.py` 排除测试；报告中的 URL 类 low 提示
+属预期（shields.io 链接）。
 
 ## 参考文档
 

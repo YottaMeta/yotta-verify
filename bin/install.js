@@ -15,7 +15,7 @@ const os = require('os');
 
 const SKILL_NAME = 'yotta-verify';
 const PKG_ROOT = path.join(__dirname, '..');
-const VERSION = '0.3.1';
+const VERSION = '0.3.2';
 
 // 智能体 -> 用户级默认技能目录（dirs 按优先级排列；--agent 装到第一个）
 // 依据官方文档：.agents/skills 并非通用目录，被 OpenCode / Cursor / Cline / Amp /

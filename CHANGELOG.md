@@ -1,5 +1,29 @@
 # 更新日志
 
+## v0.3.2 (2026-09-19)
+
+安全修复：签名数据豁免与检测器降级改为「路径 + 内容摘要」双绑定。
+
+- 背景（平台扫描发现）：旧实现按**文件名**全局跳过 `verify_rules.py` / `audit_rules.py` /
+  `vetter_rules.py` / `hardening_rules.py`，且 `is_detector_skill()` 仅凭「目录里出现同名文件」
+  判定检测型技能。两点都可被伪造：把恶意文件命名成规则表即可逃避扫描；放一个同名标记文件即可把
+  整包文档命中降级为 info。
+- 修复：
+  - 规则表豁免必须同时满足 ① 相对路径恰为 `scripts/<规则表名>.py`；② 文件 SHA-256（CRLF 归一化）
+    命中「已发布规则表摘要表」；任一条不满足 → 正常扫描（fail-closed）。
+  - `is_detector_skill()` 改由上述摘要绑定判定，标记文件不再触发文档降级。
+  - `test_*.py` 跳过只对「持有已发布签名数据」的自家包生效；非自家包的同名文件照常扫描
+    （发布包已用 `!scripts/test_*.py` 排除测试文件，发布物不受影响）。
+- 维护约定：任一家族规则表（四张表中任意一张）改动后，必须同步刷新 `SIGNATURE_DATA_DIGESTS`；
+  根仓库 `tools/check_rule_digests.py` 提供一致性校验（漏更新会在自扫时明显报错，不会静默放行）。
+- 纳入元盾规则表：`guardian_rules.py` 同样按「路径 + 摘要」绑定加入签名数据集合——元盾是检测型
+  技能，其文档中对危险命令的描述属固有属性，本版本起按检测技能文档降级处理（此前会误报
+  PIJ-020 / NET-008，导致其发布副本自扫为 INSTALL WITH CAUTION）。
+- 测试维护：`test_yottamemory_clean` 的过时断言（按 v0.8.5 期望 SAFE）校正为家族技能门禁口径
+  （无 critical / high），并注明 loopback `fetch` 命中 NET-007 为已知可读性提示。
+- 验证：`scripts/test_yotta_verify.py` 79/79；家族 26 技能源码自扫对比仅 2 项变化
+  （元察 / 元析各 +2 medium，均位于发布包已排除的 `scripts/test_*.py`）。
+
 ## v0.3.1 (2026-09-14)
 
 **STR-004 误报修复**：
