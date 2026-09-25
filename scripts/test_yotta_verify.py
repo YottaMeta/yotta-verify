@@ -366,7 +366,7 @@ def test_detector_skill_mismatch_remains(tmp):
 def test_version():
     print("== 版本 ==")
     res = run_cli(["--version"])
-    check("--version 输出 0.3.2", "0.3.2" in res.stdout, res.stdout)
+    check("--version 输出 0.3.3", "0.3.3" in res.stdout, res.stdout)
 
 
 def test_signature_data_binding(tmp):
@@ -514,9 +514,89 @@ def test_yottamemory_clean():
     # 已知噪声：test/identity-migration-view.test.js 的 loopback fetch 命中 NET-007
     # （JS fetch 网络调用，confidence 40，目标为 127.0.0.1）——属规则表可读性提示，
     # 不构成阻断级问题，故这里只锁 critical/high。
-    check("yotta-memory 无 critical/high", counts["critical"] == 0 and counts["high"] == 0,
-          str({k: counts[k] for k in ("critical", "high", "medium")}))
-    check("yotta-memory verdict 非阻断", v != yv.VERDICT_BLOCK, v)
+    # 例外（2026-09-25）：元忆 0.17.0 起自带 `scan` 检测规则，规则表与扫描夹具
+    # （bin/yotta-memory.js 规则区 + test/memory-scan.test.js）本身就是检测模式字面量，
+    # 与发布规范 §20 的 detection=true 窄例外同源。断言改为「排除这两处后无 critical/high」。
+    DETECTION_CARRIERS = ("bin/yotta-memory.js", "test/memory-scan.test.js")
+    real = [x for x in find
+            if x.severity in ("critical", "high")
+            and not any(x.file_path.replace("\\", "/").endswith(p)
+                        for p in DETECTION_CARRIERS)]
+    check("yotta-memory 无 critical/high（检测规则载体除外）", not real,
+          str([(x.severity, x.file_path) for x in real[:5]]))
+    non_carrier = [x for x in find
+                   if not any(x.file_path.replace("\\", "/").endswith(p)
+                              for p in DETECTION_CARRIERS)]
+    _c, _b, _h, v_no_carrier = yv.summarize(non_carrier)
+    check("yotta-memory 非检测载体的 verdict 非阻断",
+          v_no_carrier != yv.VERDICT_BLOCK, v_no_carrier)
+
+
+def test_opaque_payload(tmp):
+    print("== 不可静态分析的可执行载荷（v0.3.3 fail-closed）==")
+    d = make_skill(tmp / "opaque-skill", {"SKILL.md": CLEAN_SKILL})
+    (d / "tools").mkdir(parents=True, exist_ok=True)
+    (d / "tools" / "payload.bin").write_bytes(b"\x7fELF" + b"\x00" * 64)
+    (d / "tools" / "helper.exe").write_bytes(b"MZ" + b"\x00" * 32)
+    findings, counts, verdict, meta = yv.scan_core(str(d), name_hint="opaque-skill")
+    rules = [f.rule_id for f in findings]
+    check("二进制载荷出 STR-009", rules.count("STR-009") >= 2, str(rules))
+    check("二进制载荷 verdict = REVIEW REQUIRED",
+          verdict == yv.VERDICT_REVIEW, verdict)
+
+    plain = CLEAN_SKILL.replace("demo-clean", "plain-skill")
+    d2 = make_skill(tmp / "plain-skill", {
+        "SKILL.md": plain, "scripts/main.py": "print('hi')\n"})
+    _f2, _c2, v2, _m2 = yv.scan_core(str(d2), name_hint="plain-skill")
+    check("纯文本技能不受影响", v2 == yv.VERDICT_SAFE, v2)
+
+
+def test_tarball_limits(tmp):
+    print("== tarball 解包上限（v0.3.3）==")
+
+    def rejects(members, patch):
+        old = {k: getattr(yv, k) for k in patch}
+        for k, v in patch.items():
+            setattr(yv, k, v)
+        dest = tmp / "limit-dest"
+        dest.mkdir(parents=True, exist_ok=True)
+        tgz = tmp / ("limit-%d-%d.tgz" % (len(members), sum(m.size for m in members)))
+        try:
+            with tarfile.open(str(tgz), "w:gz") as tf:
+                for m in members:
+                    if m.size:
+                        tf.addfile(m, io.BytesIO(b"A" * m.size))
+                    else:
+                        tf.addfile(m)
+            with tarfile.open(str(tgz), "r:gz") as tf:
+                try:
+                    yv._safe_extract(tf, dest)
+                except ValueError:
+                    return True
+                except Exception:
+                    return False
+            return False
+        finally:
+            for k, v in old.items():
+                setattr(yv, k, v)
+
+    too_many = []
+    for i in range(5):
+        ti = tarfile.TarInfo("package/f%d" % i)
+        ti.size = 0
+        too_many.append(ti)
+    check("成员数超限被拒", rejects(too_many, {"MAX_TARBALL_MEMBERS": 3}))
+
+    big = tarfile.TarInfo("package/big")
+    big.size = 4096
+    check("单成员超限被拒", rejects([big], {"MAX_TARBALL_MEMBER_BYTES": 1024}))
+
+    m1 = tarfile.TarInfo("package/a")
+    m1.size = 1024
+    m2 = tarfile.TarInfo("package/b")
+    m2.size = 1024
+    check("解包总量超限被拒",
+          rejects([m1, m2], {"MAX_TARBALL_TOTAL_BYTES": 1500}))
 
 
 def main():
@@ -544,6 +624,8 @@ def main():
         test_self_scan()
         test_threat_engine(tmp)
         test_yottamemory_clean()
+        test_opaque_payload(tmp)
+        test_tarball_limits(tmp)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     print("\n结果：%d 通过 / %d 失败" % (PASS, FAIL))

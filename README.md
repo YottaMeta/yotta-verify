@@ -99,8 +99,8 @@ Pick any of the four methods below; the order is the recommended priority. Skill
 
 ```text
 # Optional China mirror: npm config set registry https://registry.npmmirror.com
-npx -y @yottameta/yotta-verify --agent <agent-name>      # install to the agent's default user-level skills dir
-npx -y @yottameta/yotta-verify --dir <your-skills-dir>   # point to the skills dir itself (e.g. ~/.codex/skills)
+npx -y @yottameta/yotta-verify@0.3.3 --agent <agent-name>      # install to the agent's default user-level skills dir
+npx -y @yottameta/yotta-verify@0.3.3 --dir <your-skills-dir>   # point to the skills dir itself (e.g. ~/.codex/skills)
 ```
 
 - `--agent <name>` installs to that agent's default user-level directory; `--list` shows each agent's default directory.
