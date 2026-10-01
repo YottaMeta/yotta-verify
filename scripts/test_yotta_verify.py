@@ -366,7 +366,7 @@ def test_detector_skill_mismatch_remains(tmp):
 def test_version():
     print("== 版本 ==")
     res = run_cli(["--version"])
-    check("--version 输出 0.3.3", "0.3.3" in res.stdout, res.stdout)
+    check("--version 输出 0.3.4", "0.3.4" in res.stdout, res.stdout)
 
 
 def test_signature_data_binding(tmp):
