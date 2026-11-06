@@ -31,7 +31,7 @@ python3 scripts/yotta_verify.py badge ./some-skill \
 ## 嵌入 README
 
 ```markdown
-![verified](assets/audited.svg)
+![verified](../assets/audited.svg)
 ```
 
 或使用 shields.io 动态徽章：

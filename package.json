@@ -1,6 +1,6 @@
 {
   "name": "@yottameta/yotta-verify",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "YuanXin (元信) — the pre-install security verifier for Agent skills: deterministic static scan (prompt injection + malicious patterns + SKILL.md integrity + permissions) that outputs a verdict and audited badges. Triggers before installing/evaluating any skill or npm package. Boundaries: static scan & report only; human confirmation required.",
   "license": "MIT",
   "keywords": [
@@ -38,5 +38,8 @@
   },
   "bin": {
     "yotta-verify": "bin/install.js"
+  },
+  "scripts": {
+    "test": "python scripts/test_yotta_verify.py"
   }
 }

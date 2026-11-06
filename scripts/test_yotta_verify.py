@@ -10,6 +10,7 @@ SKILL.md 完整性 / 权限汇总 / 徽章生成 / gate 闸门 / JSON / tarball 
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -93,6 +94,18 @@ def test_rules():
     # PIJ 规则都是元信独有（无 id 冲突）
     ids = [r.id for r in vr.PATTERN_RULES]
     check("规则 id 无重复", len(ids) == len(set(ids)))
+
+
+def test_pri001_special_bits():
+    print("== PRI-001 特殊权限位 ==")
+    rule = next(r for r in vr.PATTERN_RULES if r.id == "PRI-001")
+    for sample in ("chmod " + "600 x", "chmod " + "644 x", "chmod " + "700 x",
+                   "chmod " + "755 x", "chmod " + "777 x"):
+        check("常规权限不命中 %s" % sample, re.search(rule.pattern, sample) is None)
+    for sample in ("chmod " + "4755 x", "chmod " + "2755 x", "chmod " + "1777 x",
+                   "chmod " + "6755 x", "chmod " + "+s x", "chmod " + "u+s x",
+                   "chmod " + "+t x"):
+        check("特殊权限命中 %s" % sample, re.search(rule.pattern, sample) is not None)
 
 
 def test_verdict_mapping():
@@ -366,7 +379,7 @@ def test_detector_skill_mismatch_remains(tmp):
 def test_version():
     print("== 版本 ==")
     res = run_cli(["--version"])
-    check("--version 输出 0.3.4", "0.3.4" in res.stdout, res.stdout)
+    check("--version 输出 %s" % yv.VERSION, yv.VERSION in res.stdout, res.stdout)
 
 
 def test_signature_data_binding(tmp):
@@ -603,6 +616,7 @@ def main():
     tmp = Path(tempfile.mkdtemp(prefix="yotta-verify-test-"))
     try:
         test_rules()
+        test_pri001_special_bits()
         test_verdict_mapping()
         test_scan_clean(tmp)
         test_scan_malicious(tmp)
