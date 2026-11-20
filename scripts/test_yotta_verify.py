@@ -528,9 +528,16 @@ def test_yottamemory_clean():
     # （JS fetch 网络调用，confidence 40，目标为 127.0.0.1）——属规则表可读性提示，
     # 不构成阻断级问题，故这里只锁 critical/high。
     # 例外（2026-09-25）：元忆 0.17.0 起自带 `scan` 检测规则，规则表与扫描夹具
-    # （bin/yotta-memory.js 规则区 + test/memory-scan.test.js）本身就是检测模式字面量，
-    # 与发布规范 §20 的 detection=true 窄例外同源。断言改为「排除这两处后无 critical/high」。
-    DETECTION_CARRIERS = ("bin/yotta-memory.js", "test/memory-scan.test.js")
+    # 本身就是检测模式字面量，与发布规范 §20 的 detection=true 窄例外同源。
+    # 2026-11-20 补齐两个既有测试夹具：scan-policy.test.js 内置注入样例；
+    # lan-windows-autostart.test.js 用子进程模拟计划任务，均不进入发布包。
+    # 断言改为「排除这些已审测试夹具后无 critical/high」。
+    DETECTION_CARRIERS = (
+        "bin/yotta-memory.js",
+        "test/memory-scan.test.js",
+        "test/lan-windows-autostart.test.js",
+        "test/scan-policy.test.js",
+    )
     real = [x for x in find
             if x.severity in ("critical", "high")
             and not any(x.file_path.replace("\\", "/").endswith(p)
